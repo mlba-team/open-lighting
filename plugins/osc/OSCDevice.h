@@ -49,6 +49,7 @@ class OSCDevice: public Device {
               const vector<vector<OSCTarget> > &targets);
     string DeviceId() const { return "1"; }
 
+    bool AllowLooping() const { return true; }
     bool AllowMultiPortPatching() const { return true; }
 
   protected:
