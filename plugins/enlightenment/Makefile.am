@@ -9,7 +9,6 @@ if HAVE_LIBUSBDMX
   libolaenlightenment_la_SOURCES = EnlightenmentPlugin.cpp EnlightenmentDevice.cpp \
                           EnlightenmentPort.cpp
   libolaenlightenment_la_CXXFLAGS = $(COMMON_CXXFLAGS) $(libusbdmx_CFLAGS)
-  libolaenlightenment_la_LIBADD = $(libusbdmx_LIBS) \
-                          ../../common/libolacommon.la
+  libolaenlightenment_la_LIBADD = $(libusbdmx_LIBS)
 endif
 

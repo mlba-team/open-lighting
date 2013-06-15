@@ -696,6 +696,7 @@ AC_OUTPUT( Makefile \
     plugins/usbpro/Makefile \
     plugins/usbpro/messages/Makefile \
     plugins/usbpro/messages/libolausbproconf.pc \
+    plugins/enlightenment/Makefile \
     slp/Makefile \
     slp/libolaslpclient.pc \
     slp/libolaslpserver.pc \
