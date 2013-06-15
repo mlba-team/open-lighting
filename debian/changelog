@@ -1,3 +1,10 @@
+ola (0.8.29-1-mlba0-1ubuntu0) precise; urgency=low
+
+  * Added support for the digital enlightenment usb dmx interface
+  * Modified OSC plugin to send touchosc compatible messages
+
+ -- Marius Zwicker <marius@mlba-team.de>  Sat, 15 Jun 2013 11:20:00 +0200
+
 ola (0.8.29-1) unstable; urgency=low
 
   * New upstream release
