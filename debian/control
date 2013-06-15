@@ -1,7 +1,10 @@
 Source: ola
 Priority: extra
 Maintainer: RenZO <renzo@imaginux.com>
-Build-Depends: debhelper (>= 7), autotools-dev, bash-completion
+Build-Depends: debhelper (>= 7), autotools-dev, bash-completion, libcppunit-dev, uuid-dev,
+ pkg-config, libncurses5-dev, libtool, autoconf, automake, g++, libmicrohttpd-dev,
+ protobuf-compiler, python-protobuf, libprotobuf-dev, zlib1g-dev, bison,
+ flex, make, libftdi-dev, libusb-1.0-0-dev, liblo-dev
 Standards-Version: 3.9.1
 Section: libs
 Vcs-Git: https://code.google.com/p/open-lighting/
