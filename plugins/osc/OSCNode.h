@@ -44,8 +44,6 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define OSC_SEND_AS_BLOB 0
-
 /**
  * The OSCNode object handles sending and receiving DMX data using OSC.
  *
@@ -79,8 +77,9 @@ class OSCNode {
     // The options for the OSCNode object.
     struct OSCNodeOptions {
       uint16_t listen_port;  // UDP port to listen on
+      bool use_blob; // send/receive messages as blob or by value
 
-      OSCNodeOptions() : listen_port(DEFAULT_OSC_PORT) {}
+      OSCNodeOptions() : listen_port(DEFAULT_OSC_PORT), use_blob(true) {}
     };
 
     // The callback run when we receive new DMX data
@@ -107,10 +106,12 @@ class OSCNode {
 
     // The port OSC is listening on.
     uint16_t ListeningPort() const;
-    
-#if !OSC_SEND_AS_BLOB
-    DmxBuffer m_last_values;
-#endif
+
+    // Wether OSC data is sent using blob or floats
+    bool UsingBlobData() const;
+
+    // A cache to the values sent/received last
+    DmxBuffer& LastValueCache();
 
   private:
     struct NodeOSCTarget: public OSCTarget {
@@ -131,6 +132,10 @@ class OSCNode {
     lo_server m_osc_server;
     OSCTargetMap m_target_by_group;
     AddressCallbackMap m_address_callbacks;
+
+    // Used as value chache when not sending as osc blob
+    DmxBuffer m_last_values;
+    bool m_osc_blob;
 
     void DescriptorReady();
 

@@ -45,6 +45,7 @@ class OSCDevice: public Device {
     OSCDevice(AbstractPlugin *owner,
               PluginAdaptor *plugin_adaptor,
               uint16_t udp_port,
+              bool use_osc_blob,
               const vector<string> &addresses,
               const vector<vector<OSCTarget> > &targets);
     string DeviceId() const { return "1"; }

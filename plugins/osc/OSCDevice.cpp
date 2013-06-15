@@ -49,6 +49,7 @@ const char OSCDevice::DEVICE_NAME[] = "OSC Device";
 OSCDevice::OSCDevice(AbstractPlugin *owner,
                      PluginAdaptor *plugin_adaptor,
                      uint16_t udp_port,
+                     bool use_osc_blob,
                      const vector<string> &addresses,
                      const vector<vector<OSCTarget> > &targets)
     : Device(owner, DEVICE_NAME),
@@ -57,6 +58,7 @@ OSCDevice::OSCDevice(AbstractPlugin *owner,
       m_port_targets(targets) {
   OSCNode::OSCNodeOptions options;
   options.listen_port = udp_port;
+  options.use_blob = use_osc_blob;
   // allocate a new OSCNode but delay the call to Init() until later
   m_osc_node.reset(new OSCNode(plugin_adaptor, plugin_adaptor->GetExportMap(),
                                options));

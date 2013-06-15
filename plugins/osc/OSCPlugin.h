@@ -59,6 +59,7 @@ class OSCPlugin: public Plugin {
     static const char DEFAULT_PORT_COUNT[];
     static const char DEFAULT_TARGETS_TEMPLATE[];
     static const char DEFAULT_UDP_PORT[];
+    static const char DEFAULT_OSC_BLOB[];
     static const char INPUT_PORT_COUNT_KEY[];
     static const char OUTPUT_PORT_COUNT_KEY[];
     static const char PLUGIN_NAME[];
@@ -66,6 +67,7 @@ class OSCPlugin: public Plugin {
     static const char PORT_ADDRESS_TEMPLATE[];
     static const char PORT_TARGETS_TEMPLATE[];
     static const char UDP_PORT_KEY[];
+    static const char OSC_BLOB_KEY[];
 };
 }  // namespace osc
 }  // namespace plugin
