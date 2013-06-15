@@ -95,6 +95,10 @@
 #include "plugins/osc/OSCPlugin.h"
 #endif
 
+#ifdef HAVE_LIBUSBDMX
+#include "plugins/enlightenment/EnlightenmentPlugin.h"
+#endif
+
 namespace ola {
 
 using std::vector;
@@ -196,6 +200,11 @@ void DynamicPluginLoader::PopulatePlugins() {
 #ifdef HAVE_LIBFTDI
   m_plugins.push_back(
       new ola::plugin::ftdidmx::FtdiDmxPlugin(m_plugin_adaptor));
+#endif
+
+#ifdef HAVE_LIBUSBDMX
+  m_plugins.push_back(
+      new ola::plugin::enlightenment::EnlightenmentPlugin(m_plugin_adaptor));
 #endif
 }
 }  // namespace ola

@@ -354,6 +354,24 @@ if test "${have_libusb}" = "yes"; then
  AC_DEFINE(HAVE_LIBUSB, 1, [define if libusb is installed])
 fi
 
+# LIBRARY: libusbdmx
+# look for libusbdmx if the user asked us to
+AC_ARG_ENABLE(
+  [libusbdmx],
+  AS_HELP_STRING([--disable-libusbdmx], [Don't use libusbdmx even if it exists]))
+
+have_libusbdmx="no"
+
+if test "${enable_libusbdmx}" != "no"; then
+  PKG_CHECK_MODULES(libusbdmx, [libusbdmx >= 0.0], [have_libusbdmx="yes"], [true])
+fi
+AM_CONDITIONAL(HAVE_LIBUSBDMX, test "${have_libusbdmx}" = "yes")
+
+if test "${have_libusbdmx}" = "yes"; then
+ PLUGINS="${PLUGINS} enlightenment"
+ AC_DEFINE(HAVE_LIBUSBDMX, 1, [define if libusbdmx is installed])
+fi
+
 # LIBRARY: libftdi
 # look for libftdi (this requires libusb-0.1.4+ don't know if I should also check for it, since the libusb check above is not for 0.1.4 but for libusb-1
 AC_ARG_ENABLE(
