@@ -96,7 +96,7 @@ bool OSCDevice::StartHook() {
     for (; iter != targets.end(); ++iter) {
       if (iter != targets.begin())
         str << ", ";
-      str << iter->socket_address << iter->osc_address;
+      str << iter->socket_address << ExpandTemplate(iter->osc_address, i);
       m_osc_node->AddTarget(i, *iter);
     }
     OSCOutputPort *port = new OSCOutputPort(this, i, m_osc_node.get(),
