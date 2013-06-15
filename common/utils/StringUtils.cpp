@@ -233,6 +233,21 @@ bool StringToInt(const string &value, int8_t *output, bool strict) {
   return true;
 }
 
+/*
+ * Convert a string to a bool.
+ * @returns true if sucessfull, false otherwise
+ */
+bool StringToBool(const string& value, bool *output) {
+  if( value == "false" ) {
+    *output = false;
+    return true;
+  } else if( value == "true" ) {
+    *output = true;
+    return true;
+  }
+  return false;
+}
+
 
 /*
  * Escape \
