@@ -30,12 +30,16 @@
 #include <vector>
 #include "plugins/osc/OSCNode.h"
 
+#include <stdio.h>
+
 namespace ola {
 namespace plugin {
 namespace osc {
 
 using ola::IntToString;
 using std::make_pair;
+
+#define OSC_SEND_AS_BLOB 0
 
 const char OSCNode::OSC_PORT_VARIABLE[] = "osc-listen-port";
 
@@ -59,6 +63,7 @@ int OSCDataHandler(const char *osc_address, const char *types, lo_arg **argv,
   OLA_DEBUG << "Got OSC message for " << osc_address << ", types are " << types;
 
   OSCNode *node = reinterpret_cast<OSCNode*>(user_data);
+#if OSC_SEND_AS_BLOB
   if (string(types) != "b") {
     OLA_WARN << "Got invalid OSC message to " << osc_address << ", types was "
              << types;
@@ -76,6 +81,36 @@ int OSCDataHandler(const char *osc_address, const char *types, lo_arg **argv,
                                lo_blob_datasize(blob));
   DmxBuffer data_buffer(static_cast<uint8_t*>(lo_blob_dataptr(blob)), size);
   node->HandleDMXData(osc_address, data_buffer);
+#else
+  if (string(types) != "f") {
+    OLA_WARN << "Got invalid OSC message to " << osc_address << ", types was "
+             << types;
+    return 0;
+  }
+
+  if (argc != 1) {
+    OLA_WARN << "Got invalid OSC message to " << osc_address << ", argc was "
+             << argc;
+    return 0;
+  }
+
+  std::string path(osc_address);
+  float val = argv[0]->f;
+
+  size_t pos = path.find_last_of("/");
+  if (pos == string::npos) {
+    OLA_WARN << "Got invalid OSC message to " << osc_address << ", path was " << path;
+    return 0;
+  }
+  int channel = atoi(path.substr(pos+1).c_str());
+  std::string address = path.substr(0,pos);
+
+  //OLA_WARN << "path=" << address << " channel=" << channel << " value=" << val;
+
+  node->m_last_values.SetChannel(channel, (int)(val*255.0f));
+  node->HandleDMXData(address, node->m_last_values);
+#endif
+
   return 0;
 }
 
@@ -261,6 +296,7 @@ bool OSCNode::SendData(unsigned int group, const ola::DmxBuffer &dmx_data) {
     return true;
 
   OSCTargetVector *targets = group_iter->second;
+#if OSC_SEND_AS_BLOB
   // create the new OSC blob
   lo_blob osc_data = lo_blob_new(dmx_data.Size(), dmx_data.GetRaw());
 
@@ -278,6 +314,32 @@ bool OSCNode::SendData(unsigned int group, const ola::DmxBuffer &dmx_data) {
   }
   // free the blob
   lo_blob_free(osc_data);
+#else
+  bool ok = true;
+  // iterate over all the targets, and send to each one.
+  OSCTargetVector::iterator target_iter = targets->begin();
+  for (; target_iter != targets->end(); ++target_iter) {
+    OLA_DEBUG << "Sending to " << (*target_iter)->socket_address;
+
+    for(size_t i = 0; i < DMX_UNIVERSE_SIZE; ++i) {
+
+      if(dmx_data.Get(i) != m_last_values.Get(i)) {
+        std::stringstream path;
+        path << (*target_iter)->osc_address << "/" << i;
+
+
+        //OLA_DEBUG << "Sending " << path.str() << "@" << dmx_data.Get(i) / 255.0f;
+        m_last_values.SetChannel(i, dmx_data.Get(i));
+        int ret = lo_send_from((*target_iter)->liblo_address,
+                               m_osc_server,
+                               LO_TT_IMMEDIATE,
+                               path.str().c_str(),
+                               "f", dmx_data.Get(i) / 255.0f);
+        ok &= (ret > 0);
+      }
+    }
+  }
+#endif
   return ok;
 }
 
@@ -304,13 +366,22 @@ bool OSCNode::RegisterAddress(const string &osc_address,
     // This is a new registration, insert into the AddressCallbackMap and
     // register with liblo.
     m_address_callbacks.insert(make_pair(osc_address, callback));
+#if OSC_SEND_AS_BLOB
     lo_server_add_method(m_osc_server, osc_address.c_str(), "b", OSCDataHandler,
                          this);
+#else
+    lo_server_add_method(m_osc_server, NULL, "f", OSCDataHandler,
+                         this);
+#endif
   } else {
     // The osc_address is already registered.
     if (callback == NULL) {
       // De-registration request
+#if OSC_SEND_AS_BLOB
       lo_server_del_method(m_osc_server, osc_address.c_str(), "b");
+#else
+      lo_server_del_method(m_osc_server, NULL, "f");
+#endif
       delete iter->second;
       m_address_callbacks.erase(iter);
     } else {

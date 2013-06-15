@@ -44,6 +44,8 @@ using std::map;
 using std::string;
 using std::vector;
 
+#define OSC_SEND_AS_BLOB 0
+
 /**
  * The OSCNode object handles sending and receiving DMX data using OSC.
  *
@@ -105,6 +107,10 @@ class OSCNode {
 
     // The port OSC is listening on.
     uint16_t ListeningPort() const;
+    
+#if !OSC_SEND_AS_BLOB
+    DmxBuffer m_last_values;
+#endif
 
   private:
     struct NodeOSCTarget: public OSCTarget {
