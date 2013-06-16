@@ -77,7 +77,7 @@ class OSCNode {
     // The options for the OSCNode object.
     struct OSCNodeOptions {
       uint16_t listen_port;  // UDP port to listen on
-      bool use_blob; // send/receive messages as blob or by value
+      bool use_blob;  // send/receive messages as blob or by value
 
       OSCNodeOptions() : listen_port(DEFAULT_OSC_PORT), use_blob(true) {}
     };

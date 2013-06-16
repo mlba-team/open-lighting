@@ -24,13 +24,14 @@
 #include <ola/Logging.h>
 #include <ola/StringUtils.h>
 #include <ola/stl/STLUtils.h>
+#include <stdio.h>
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "plugins/osc/OSCNode.h"
 
-#include <stdio.h>
 
 namespace ola {
 namespace plugin {
@@ -62,8 +63,7 @@ int OSCDataHandler(const char *osc_address, const char *types, lo_arg **argv,
 
   OSCNode *node = reinterpret_cast<OSCNode*>(user_data);
 
-  if( node->UsingBlobData() ) {
-
+  if (node->UsingBlobData()) {
     if (string(types) != "b") {
       OLA_WARN << "Got invalid OSC message to " << osc_address << ", types was "
                << types;
@@ -83,7 +83,6 @@ int OSCDataHandler(const char *osc_address, const char *types, lo_arg **argv,
     node->HandleDMXData(osc_address, data_buffer);
 
   } else {
-
     if (string(types) != "f") {
       OLA_WARN << "Got invalid OSC message to " << osc_address << ", types was "
                << types;
@@ -101,17 +100,17 @@ int OSCDataHandler(const char *osc_address, const char *types, lo_arg **argv,
 
     size_t pos = path.find_last_of("/");
     if (pos == string::npos) {
-      OLA_WARN << "Got invalid OSC message to " << osc_address << ", path was " << path;
+      OLA_WARN << "Got invalid OSC message to " << osc_address
+               << ", path was " << path;
       return 0;
     }
     int channel = atoi(path.substr(pos+1).c_str());
-    std::string address = path.substr(0,pos);
+    std::string address = path.substr(0, pos);
 
-    //OLA_WARN << "path=" << address << " channel=" << channel << " value=" << val;
+    // OLA_WARN << "path=" << address << " channel=" << channel << " value=" << val;
 
-    node->LastValueCache().SetChannel(channel, (int)(val*255.0f));
+    node->LastValueCache().SetChannel(channel, static_cast<int>(val*255.0f));
     node->HandleDMXData(address, node->LastValueCache());
-
   }
 
   return 0;
@@ -131,7 +130,7 @@ OSCNode::OSCNode(SelectServerInterface *ss,
       m_listen_port(options.listen_port),
       m_descriptor(NULL),
       m_osc_server(NULL),
-      m_osc_blob(options.use_blob){
+      m_osc_blob(options.use_blob) {
   if (export_map) {
     // export the OSC listening port if we have an export map
     ola::IntegerVariable *osc_port_var =
@@ -302,8 +301,7 @@ bool OSCNode::SendData(unsigned int group, const ola::DmxBuffer &dmx_data) {
   OSCTargetVector *targets = group_iter->second;
   bool ok = true;
 
-  if( m_osc_blob ) {
-
+  if (m_osc_blob) {
     // create the new OSC blob
     lo_blob osc_data = lo_blob_new(dmx_data.Size(), dmx_data.GetRaw());
 
@@ -322,20 +320,18 @@ bool OSCNode::SendData(unsigned int group, const ola::DmxBuffer &dmx_data) {
     lo_blob_free(osc_data);
 
   } else {
-
     // iterate over all the targets, and send to each one.
     OSCTargetVector::iterator target_iter = targets->begin();
     for (; target_iter != targets->end(); ++target_iter) {
       OLA_DEBUG << "Sending to " << (*target_iter)->socket_address;
 
-      for(size_t i = 0; i < DMX_UNIVERSE_SIZE; ++i) {
-
-        if(dmx_data.Get(i) != m_last_values.Get(i)) {
+      for (size_t i = 0; i < DMX_UNIVERSE_SIZE; ++i) {
+        if (dmx_data.Get(i) != m_last_values.Get(i)) {
           std::stringstream path;
           path << (*target_iter)->osc_address << "/" << i;
 
 
-          //OLA_DEBUG << "Sending " << path.str() << "@" << dmx_data.Get(i) / 255.0f;
+          // OLA_DEBUG << "Sending " << path.str() << "@" << dmx_data.Get(i) / 255.0f;
           m_last_values.SetChannel(i, dmx_data.Get(i));
           int ret = lo_send_from((*target_iter)->liblo_address,
                                  m_osc_server,
@@ -346,7 +342,6 @@ bool OSCNode::SendData(unsigned int group, const ola::DmxBuffer &dmx_data) {
         }
       }
     }
-
   }
 
   return ok;
@@ -375,22 +370,30 @@ bool OSCNode::RegisterAddress(const string &osc_address,
     // This is a new registration, insert into the AddressCallbackMap and
     // register with liblo.
     m_address_callbacks.insert(make_pair(osc_address, callback));
-    if( m_osc_blob ) {
-      lo_server_add_method(m_osc_server, osc_address.c_str(), "b", OSCDataHandler,
-                         this);
+    if (m_osc_blob) {
+      lo_server_add_method(
+                  m_osc_server,
+                  osc_address.c_str(),
+                  "b",
+                  OSCDataHandler,
+                  this);
     } else {
       // in this case we must not pass an adress as each
       // channel has its own, instead we ignore incoming
       // messages within the handler if needed
-      lo_server_add_method(m_osc_server, NULL, "f", OSCDataHandler,
-                         this);
+      lo_server_add_method(
+                  m_osc_server,
+                  NULL,
+                  "f",
+                  OSCDataHandler,
+                  this);
     }
 
   } else {
     // The osc_address is already registered.
     if (callback == NULL) {
       // De-registration request
-      if( m_osc_blob ) {
+      if ( m_osc_blob ) {
         lo_server_del_method(m_osc_server, osc_address.c_str(), "b");
       } else {
         // in this case we must not pass an adress as each
