@@ -15,15 +15,16 @@
  *
  */
 
-#ifndef OLA_ENLIGHTENMENT_PLUGIN_H_
-#define OLA_ENLIGHTENMENT_PLUGIN_H_
+#ifndef PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPLUGIN_H_
+#define PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPLUGIN_H_
 
-#include <list>
-#include <string>
 #include <ola/DmxBuffer.h>
 #include <olad/Plugin.h>
 #include <ola/network/Socket.h>
 #include <ola/plugin_id.h>
+
+#include <list>
+#include <string>
 
 namespace ola {
 namespace plugin {
@@ -36,7 +37,7 @@ class EnlightenmentPlugin: public ola::Plugin {
   public:
     explicit EnlightenmentPlugin(PluginAdaptor *plugin_adaptor):
       Plugin(plugin_adaptor),
-      _device_mode(6) {}
+      m_device_mode(6) {}
     ~EnlightenmentPlugin();
 
     string Name() const { return PLUGIN_NAME; }
@@ -54,9 +55,9 @@ class EnlightenmentPlugin: public ola::Plugin {
     bool SetupDevices();
     int CleanupDevices();
 
-    std::list<EnlightenmentDevice*> _devices;
-    std::list<EnlightenmentInputPort*> _input_ports;
-    int _device_mode;  // the mode of the device
+    std::list<EnlightenmentDevice*> m_devices;
+    std::list<EnlightenmentInputPort*> m_input_ports;
+    int m_device_mode;  // the mode of the device
 
     static const char DEVICE_MODE_KEY[];
     static const char DEFAULT_DEVICE_MODE[];
@@ -64,8 +65,8 @@ class EnlightenmentPlugin: public ola::Plugin {
     static const char PLUGIN_PREFIX[];
 };
 
-}  // enlightenment
-}  // plugin
-}  // ola
+}  // namespace enlightenment
+}  // namespace plugin
+}  // namespace ola
 
-#endif  // OLA_ENLIGHTENMENT_PLUGIN_H_
+#endif  // PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPLUGIN_H_

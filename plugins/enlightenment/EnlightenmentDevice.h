@@ -15,11 +15,11 @@
  *
 */
 
-#ifndef OLA_ENLIGHTENMENT_DEVICE_H_
-#define OLA_ENLIGHTENMENT_DEVICE_H_
+#ifndef PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTDEVICE_H_
+#define PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTDEVICE_H_
 
-#include <string>
 #include <olad/Device.h>
+#include <string>
 
 namespace ola {
 namespace plugin {
@@ -37,30 +37,30 @@ class EnlightenmentDevice: public ola::Device {
     ~EnlightenmentDevice();
 
     bool openInterface(class PluginAdaptor *plugin_adaptor);
-    char* InterfaceSerial() { return _device_serial; }
-    string InterfaceSerialStr() const { return string(_device_serial); }
+    char* InterfaceSerial() { return m_device_serial; }
+    string InterfaceSerialStr() const { return string(m_device_serial); }
     unsigned int InterfaceVersion();
-    int getFd() const { return _fd; }
-    EnlightenmentInputPort* getInputPort() const { return _input; }
-    EnlightenmentOutputPort* getOutputPort() const { return _output; }
+    int getFd() const { return m_fd; }
+    EnlightenmentInputPort* getInputPort() const { return m_input; }
+    EnlightenmentOutputPort* getOutputPort() const { return m_output; }
 
 
     string DeviceId() const { return InterfaceSerialStr(); }
 
-    bool AllowLooping() const { return _allow_multiport_patching; }
-    bool AllowMultiPortPatching() const { return _allow_multiport_patching; }
+    bool AllowLooping() const { return m_allow_multiport_patching; }
+    bool AllowMultiPortPatching() const { return m_allow_multiport_patching; }
 
   private:
-    EnlightenmentInputPort* _input;
-    EnlightenmentOutputPort* _output;
-    char _device_serial[17];
-    int _device_mode;
-    int _fd;
+    EnlightenmentInputPort* m_input;
+    EnlightenmentOutputPort* m_output;
+    char m_device_serial[17];
+    int m_device_mode;
+    int m_fd;
 
-    bool _allow_multiport_patching;
+    bool m_allow_multiport_patching;
 };
 
-}  // enlightenment
-}  // plugin
-}  // ola
-#endif  // OLA_ENLIGHTENMENT_DEVICE_H_
+}  // namespace enlightenment
+}  // namespace plugin
+}  // namespace ola
+#endif  // PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTDEVICE_H_

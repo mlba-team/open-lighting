@@ -16,16 +16,17 @@
  */
 
 
-#include <string>
-#include "EnlightenmentPlugin.h"
-#include "EnlightenmentDevice.h"
-#include "EnlightenmentPort.h"
-
 #include <ola/Logging.h>
 
 extern "C" {
 #include <usbdmx.h>
 }
+
+#include <string>
+
+#include "plugins/enlightenment/EnlightenmentPlugin.h"
+#include "plugins/enlightenment/EnlightenmentDevice.h"
+#include "plugins/enlightenment/EnlightenmentPort.h"
 
 namespace ola {
 namespace plugin {
@@ -44,15 +45,19 @@ EnlightenmentDevice::EnlightenmentDevice(class EnlightenmentPlugin *owner,
                                          char* device_id,
                                          int device_mode
                                          )
-  : Device(owner, name), _input(NULL), _output(NULL), _device_mode(device_mode),
-    _fd(0), _allow_multiport_patching(true) {
+  : Device(owner, name),
+    m_input(NULL),
+    m_output(NULL),
+    m_device_mode(device_mode),
+    m_fd(0),
+    m_allow_multiport_patching(true) {
   // this is the id the device is attached to
-  memcpy(_device_serial, device_id, 16 );
-  _device_serial[16] = '\0';
+  memcpy(m_device_serial, device_id, 16);
+  m_device_serial[16] = '\0';
 }
 
 unsigned int EnlightenmentDevice::InterfaceVersion() {
-   return GetDeviceVersion(_device_serial);
+  return GetDeviceVersion(m_device_serial);
 }
 
 bool EnlightenmentDevice::openInterface(class PluginAdaptor *plugin_adaptor) {
@@ -65,54 +70,63 @@ bool EnlightenmentDevice::openInterface(class PluginAdaptor *plugin_adaptor) {
   // 5: DMX In -> DMX Out & DMX In -> PC In
   // 6: PC Out -> DMX Out & DMX In -> PC In
   // 7: DMX In + PC Out -> DMX Out & DMX In -> PC In
-  switch(_device_mode) {
+  switch (m_device_mode) {
     case 4:
     case 5:
     case 6:
     case 7:
-      _input = new EnlightenmentInputPort(this, plugin_adaptor, 0 /* TODO: Which id goes here? */);
+      m_input = new EnlightenmentInputPort(
+                  this,
+                  plugin_adaptor,
+                  0 /* TODO: Which id goes here? */);
       OLA_DEBUG << "created new input port";
-      if(_input == NULL)
+      if (m_input == NULL)
         return false;
-      this->AddPort(_input);
+      this->AddPort(m_input);
       break;
   }
-  switch(_device_mode) {
+
+  switch (m_device_mode) {
     case 2:
     case 3:
     case 6:
     case 7:
-      _output = new EnlightenmentOutputPort(this, 0 /* TODO: Which id goes here? */);
+      m_output = new EnlightenmentOutputPort(
+                  this,
+                  0 /* TODO: Which id goes here? */);
       OLA_DEBUG << "created new output port";
-      if(_output == NULL)
+      if (m_output == NULL)
         return false;
-      this->AddPort(_output);
+      this->AddPort(m_output);
       break;
   }
 
   // open the interface
-  int fd = OpenLink(_device_serial, _output ? _output->getTDMXArray() : NULL, _input ? _input->getTDMXArray() : NULL);
-  if(fd != 1) {
+  int fd = OpenLink(
+              m_device_serial,
+              m_output ? m_output->getTDMXArray() : NULL,
+              m_input ? m_input->getTDMXArray() : NULL);
+  if (fd != 1) {
     OLA_WARN << "Unable to open Interface, did you install the udev-rule?\n";
     return false;
   } else {
-    _fd = fd;
+    m_fd = fd;
   }
   // configure the mode
-  SetInterfaceMode(_device_serial, _device_mode);
+  SetInterfaceMode(m_device_serial, m_device_mode);
 
   // mode 7 is the only mode, multport patching is not allowed
-  if(_device_mode==7)
-    _allow_multiport_patching = false;
+  if (m_device_mode == 7)
+    m_allow_multiport_patching = false;
 
   return true;
 }
 
 EnlightenmentDevice::~EnlightenmentDevice() {
-  CloseLink( _device_serial );
+  CloseLink(m_device_serial);
 }
 
-}  // enlightenment
-}  // plugin
-}  // ola
+}  // namespace enlightenment
+}  // namespace plugin
+}  // namespace ola
 

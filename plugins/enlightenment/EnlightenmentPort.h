@@ -16,17 +16,19 @@
  */
 
 
-#ifndef OLA_ENLIGHTENMENT_PORT_H_
-#define OLA_ENLIGHTENMENT_PORT_H_
+#ifndef PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPORT_H_
+#define PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPORT_H_
 
-#include <string>
 #include <ola/BaseTypes.h>
 #include <ola/DmxBuffer.h>
-#include "EnlightenmentDevice.h"
 
 extern "C" {
   #include <usbdmx.h>
 }
+
+#include <string>
+
+#include "plugins/enlightenment/EnlightenmentDevice.h"
 
 namespace ola {
 namespace plugin {
@@ -41,21 +43,21 @@ class EnlightenmentOutputPort: public BasicOutputPort {
     EnlightenmentOutputPort(EnlightenmentDevice *parent,
                             int port_id)
       : BasicOutputPort(parent, port_id) {
-      memset(_output_array, 0, sizeof(TDMXArray));
-      memset(_lastvalue_buffer, 0, sizeof(TDMXArray));
+      memset(m_output_array, 0, sizeof(TDMXArray));
+      memset(m_lastvalue_buffer, 0, sizeof(TDMXArray));
 
-      _description = "Output of device '" + parent->InterfaceSerialStr() + "'";
+      m_description = "Output of device '" + parent->InterfaceSerialStr() + "'";
     }
 
     bool WriteDMX(const DmxBuffer &buffer, uint8_t priority);
-    TDMXArray* getTDMXArray(){ return &_output_array; }
-    string Description() const { return _description; }
+    TDMXArray* getTDMXArray() { return &m_output_array; }
+    string Description() const { return m_description; }
 
   private:
-    TDMXArray _output_array;
-    TDMXArray _lastvalue_buffer;
+    TDMXArray m_output_array;
+    TDMXArray m_lastvalue_buffer;
 
-    std::string _description;
+    std::string m_description;
 };
 
 
@@ -68,26 +70,26 @@ class EnlightenmentInputPort: public BasicInputPort {
                                     class PluginAdaptor *plugin_adaptor,
                                     int port_id):
       BasicInputPort(parent, port_id, plugin_adaptor) {
-      _read_buffer.SetRangeToValue(0, 0, DMX_UNIVERSE_SIZE);
-      memset(_input_array, 0, sizeof(TDMXArray));
+      m_read_buffer.SetRangeToValue(0, 0, DMX_UNIVERSE_SIZE);
+      memset(m_input_array, 0, sizeof(TDMXArray));
 
-      _description = "Input of device '" + parent->InterfaceSerialStr() + "'";
+      m_description = "Input of device '" + parent->InterfaceSerialStr() + "'";
     }
 
     const DmxBuffer &ReadDMX() const;
     bool UpdateData();
-    TDMXArray* getTDMXArray(){ return &_input_array; }
-    string Description() const { return _description; }
+    TDMXArray* getTDMXArray() { return &m_input_array; }
+    string Description() const { return m_description; }
 
   private:
-    TDMXArray _input_array;
-    DmxBuffer _read_buffer;
+    TDMXArray m_input_array;
+    DmxBuffer m_read_buffer;
 
-    std::string _description;
+    std::string m_description;
 };
 
-}  // enlightenment
-}  // plugin
-}  // ola
+}  // namespace enlightenment
+}  // namespace plugin
+}  // namespace ola
 
-#endif  // OLA_ENLIGHTENMENT_PORT_H_
+#endif  // PLUGINS_ENLIGHTENMENT_ENLIGHTENMENTPORT_H_
