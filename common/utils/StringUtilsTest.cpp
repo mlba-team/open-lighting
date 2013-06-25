@@ -62,6 +62,7 @@ class StringUtilsTest: public CppUnit::TestFixture {
   CPPUNIT_TEST(testStringToInt8);
   CPPUNIT_TEST(testHexStringToInt);
   CPPUNIT_TEST(testPrefixedHexStringToInt);
+  CPPUNIT_TEST(testStringToBool);
   CPPUNIT_TEST(testToLower);
   CPPUNIT_TEST(testToUpper);
   CPPUNIT_TEST(testCapitalizeLabel);
@@ -85,6 +86,7 @@ class StringUtilsTest: public CppUnit::TestFixture {
     void testStringToInt8();
     void testHexStringToInt();
     void testPrefixedHexStringToInt();
+    void testStringToBool();
     void testToLower();
     void testToUpper();
     void testCapitalizeLabel();
@@ -584,6 +586,28 @@ void StringUtilsTest::testStringToInt8() {
   OLA_ASSERT_EQ((int8_t) 127, value);
   OLA_ASSERT_FALSE(StringToInt("128", &value));
   OLA_ASSERT_FALSE(StringToInt("129", &value));
+}
+
+
+void StringUtilsTest::testStringToBool() {
+    bool value = false;
+
+    OLA_ASSERT_FALSE(StringToBool("", &value));
+    OLA_ASSERT_FALSE(StringToBool("f", &value));
+
+    OLA_ASSERT_TRUE(StringToBool("true", &value));
+    OLA_ASSERT_TRUE( value );
+    OLA_ASSERT_TRUE(StringToBool("TRUE", &value));
+    OLA_ASSERT_TRUE( value );
+    OLA_ASSERT_TRUE(StringToBool("True", &value));
+    OLA_ASSERT_TRUE( value );
+
+    OLA_ASSERT_TRUE(StringToBool("false", &value));
+    OLA_ASSERT_FALSE( value );
+    OLA_ASSERT_TRUE(StringToBool("FALSE", &value));
+    OLA_ASSERT_FALSE( value );
+    OLA_ASSERT_TRUE(StringToBool("False", &value));
+    OLA_ASSERT_FALSE( value );
 }
 
 

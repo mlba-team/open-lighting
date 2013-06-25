@@ -55,7 +55,7 @@ bool HexStringToInt(const string &value, uint32_t *output);
 bool HexStringToInt(const string &value, int8_t *output);
 bool HexStringToInt(const string &value, int16_t *output);
 bool HexStringToInt(const string &value, int32_t *output);
-bool StringToBool(const string& value, bool *output);
+bool StringToBool(const string &value, bool *output);
 void ToLower(string *s);
 void ToUpper(string *s);
 void CapitalizeLabel(string *s);
