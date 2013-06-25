@@ -37,18 +37,16 @@ namespace enlightenment {
  */
 bool EnlightenmentOutputPort::WriteDMX(const DmxBuffer &buffer,
                                        uint8_t priority) {
-  assert(buffer.Size() == DMX_UNIVERSE_SIZE);
-
   // NOTE: Simply copying the entire universe
   //       would not trigger the driver properly
-  for (size_t i = 0; i < DMX_UNIVERSE_SIZE; ++i) {
+  for (size_t i = 0; i < buffer.Size(); ++i) {
     // NOTE: The test is to reduce the data sent to
     //       the interface, might be removed in the future
     if (m_lastvalue_buffer[i] != buffer.Get(i))
       m_lastvalue_buffer[i] = m_output_array[i] = buffer.Get(i);
   }
 
-  // TODO(marius): Do we need to use this?
+  // mark as used to suppress compiler warning
   (void)priority;
 
   return true;

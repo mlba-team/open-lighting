@@ -23,7 +23,7 @@
 #include <ola/network/Socket.h>
 #include <ola/plugin_id.h>
 
-#include <list>
+#include <set>
 #include <string>
 
 namespace ola {
@@ -35,10 +35,15 @@ class EnlightenmentInputPort;
 
 class EnlightenmentPlugin: public ola::Plugin {
   public:
-    explicit EnlightenmentPlugin(PluginAdaptor *plugin_adaptor):
-      Plugin(plugin_adaptor),
-      m_device_mode(6) {}
+    explicit EnlightenmentPlugin(PluginAdaptor *plugin_adaptor)
+        : Plugin(plugin_adaptor),
+          m_device_mode(DEFAULT_DEVICEMODE) {}
     ~EnlightenmentPlugin();
+
+    enum {
+        DEFAULT_DEVICEMODE = 6,
+        SERIAL_LENGTH = 17
+    };
 
     string Name() const { return PLUGIN_NAME; }
     string Description() const;
@@ -55,8 +60,7 @@ class EnlightenmentPlugin: public ola::Plugin {
     bool SetupDevices();
     int CleanupDevices();
 
-    std::list<EnlightenmentDevice*> m_devices;
-    std::list<EnlightenmentInputPort*> m_input_ports;
+    std::set<EnlightenmentDevice*> m_devices;
     int m_device_mode;  // the mode of the device
 
     static const char DEVICE_MODE_KEY[];

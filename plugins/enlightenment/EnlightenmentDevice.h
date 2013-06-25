@@ -30,15 +30,36 @@ class EnlightenmentOutputPort;
 
 class EnlightenmentDevice: public ola::Device {
   public:
+    enum DeviceMode {
+        // 0: Do nothing - Standby
+       STANDBY = 0,
+        // 1: DMX In -> DMX Out
+       DMXIN_TO_DMXOUT = 1,
+        // 2: PC Out -> DMX Out
+       PCOUT_TO_DMXOUT = 2,
+        // 3: DMX In + PC Out -> DMX Out
+       DMXIN_PCIN_TO_DMXOUT = 3,
+        // 4: DMX In -> PC In
+       DMXIN_TO_PCIN = 4,
+        // 5: DMX In -> DMX Out & DMX In -> PC In
+       DMXIN_TO_PCOUT_AND_DMXIN_TO_PCIN = 5,
+        // 6: PC Out -> DMX Out & DMX In -> PC In
+       PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN = 6,
+        // 7: DMX In + PC Out -> DMX Out & DMX In -> PC In
+       DMXIN_PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN = 7
+    };
+
     EnlightenmentDevice(class EnlightenmentPlugin *owner,
                         const string &name,
-                        char* device_serial,
-                        int device_mode);
+                        const string &device_serial,
+                        DeviceMode device_mode);
     ~EnlightenmentDevice();
 
     bool openInterface(class PluginAdaptor *plugin_adaptor);
-    char* InterfaceSerial() { return m_device_serial; }
-    string InterfaceSerialStr() const { return string(m_device_serial); }
+    inline char *InterfaceSerial() {
+        return const_cast<char*>(m_device_serial.c_str());
+    }
+    const string &InterfaceSerialStr() const { return m_device_serial; }
     unsigned int InterfaceVersion();
     int getFd() const { return m_fd; }
     EnlightenmentInputPort* getInputPort() const { return m_input; }
@@ -50,11 +71,13 @@ class EnlightenmentDevice: public ola::Device {
     bool AllowLooping() const { return m_allow_multiport_patching; }
     bool AllowMultiPortPatching() const { return m_allow_multiport_patching; }
 
+    void IncomingChanges();
+
   private:
     EnlightenmentInputPort* m_input;
     EnlightenmentOutputPort* m_output;
-    char m_device_serial[17];
-    int m_device_mode;
+    string m_device_serial;
+    DeviceMode m_device_mode;
     int m_fd;
 
     bool m_allow_multiport_patching;

@@ -36,7 +36,7 @@ extern "C" {
 
 #include <string>
 #include <vector>
-#include <list>
+#include <set>
 
 #include "plugins/enlightenment/EnlightenmentDevice.h"
 #include "plugins/enlightenment/EnlightenmentPlugin.h"
@@ -44,7 +44,8 @@ extern "C" {
 
 
 static ola::thread::Mutex enlightenment_plugin_mutex;
-static std::list<ola::plugin::enlightenment::EnlightenmentPlugin*> enlightenment_plugin_instances;
+static std::set<ola::plugin::enlightenment::EnlightenmentPlugin*>
+enlightenment_plugin_instances;
 
 /*
  * Software Interrupt handler
@@ -52,10 +53,12 @@ static std::list<ola::plugin::enlightenment::EnlightenmentPlugin*> enlightenment
 extern "C" void enlightenment_dmx_handler() {
   using ola::plugin::enlightenment::EnlightenmentPlugin;
 
-  std::list<EnlightenmentPlugin*>::iterator it;
+  std::set<EnlightenmentPlugin*>::iterator it;
   ola::thread::MutexLocker lock(&enlightenment_plugin_mutex);
 
-  for (it = enlightenment_plugin_instances.begin(); it != enlightenment_plugin_instances.end(); ++it)
+  for (it = enlightenment_plugin_instances.begin();
+       it != enlightenment_plugin_instances.end();
+       ++it)
     (*it)->IncomingChanges();
 }
 
@@ -88,9 +91,10 @@ bool EnlightenmentPlugin::StartHook() {
   }
   // register the callback to react to incoming changes
   enlightenment_plugin_mutex.Lock();
-  enlightenment_plugin_instances.push_back(this);
+  enlightenment_plugin_instances.insert(this);
+  if (enlightenment_plugin_instances.size() == 1)
+    RegisterInputChangeNotification(enlightenment_dmx_handler);
   enlightenment_plugin_mutex.Unlock();
-  RegisterInputChangeNotification(enlightenment_dmx_handler);
 
   return true;
 }
@@ -102,10 +106,12 @@ bool EnlightenmentPlugin::StartHook() {
  */
 bool EnlightenmentPlugin::StopHook() {
   enlightenment_plugin_mutex.Lock();
-  enlightenment_plugin_instances.remove(this);
+  enlightenment_plugin_instances.erase(this);
+  if (enlightenment_plugin_instances.empty()) {
+    UnregisterInputChangeNotification();
+    CleanupDevices();
+  }
   enlightenment_plugin_mutex.Unlock();
-  UnregisterInputChangeNotification();
-  CleanupDevices();
 
   return true;
 }
@@ -141,11 +147,11 @@ string EnlightenmentPlugin::Description() const {
  * Called when there is input for us
  */
 void EnlightenmentPlugin::IncomingChanges() {
-  std::list<EnlightenmentInputPort*>::iterator iter;
+  std::set<EnlightenmentDevice*>::iterator iter;
 
-  // check all input ports for new data
-  for (iter = m_input_ports.begin(); iter != m_input_ports.end(); ++iter)
-    (*iter)->UpdateData();
+  // check all devices for new data
+  for (iter = m_devices.begin(); iter != m_devices.end(); ++iter)
+    (*iter)->IncomingChanges();
 }
 
 
@@ -174,21 +180,23 @@ bool EnlightenmentPlugin::SetDefaultPreferences() {
  */
 bool EnlightenmentPlugin::SetupDevices() {
   TSERIALLIST interfaces;
+  const TSERIAL NULL_SERIAL = {
+      '0', '0', '0', '0', '0', '0',
+      '0', '0', '0', '0', '0', '0',
+      '0', '0', '0', '0'};
   GetAllConnectedInterfaces(&interfaces);
 
   for (int i = 0;; ++i) {
-    const TSERIAL NULL_SERIAL = {'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'};
-
-    char terminated_serial[17];
-    memcpy(terminated_serial, interfaces[i], 16);
-    terminated_serial[16] = '\0';
-
-    string device_serial(terminated_serial);
     // test for the last interface
-    if (memcmp(interfaces[i], NULL_SERIAL, 16) == 0) {
+    if (memcmp(interfaces[i], NULL_SERIAL, SERIAL_LENGTH-1) == 0) {
       OLA_DEBUG << "found empty serial placeholder, ending device enumeration";
       break;
     }
+
+    char terminated_serial[SERIAL_LENGTH];
+    memcpy(terminated_serial, interfaces[i], SERIAL_LENGTH-1);
+    terminated_serial[SERIAL_LENGTH-1] = '\0';
+    string device_serial(terminated_serial);
 
     OLA_DEBUG << "trying to open device " << device_serial
               << ", mode " << m_device_mode;
@@ -198,29 +206,25 @@ bool EnlightenmentPlugin::SetupDevices() {
                 this,
                 "Enlightenment [" + device_serial + "]",
                 interfaces[i],
-                m_device_mode);
+                static_cast<EnlightenmentDevice::DeviceMode>(m_device_mode));
     OLA_INFO << "new device : serial = " << device->InterfaceSerialStr()
              << " / version " << device->InterfaceVersion();
-    m_devices.push_back(device);
     if (!device->Start()) {
-      OLA_WARN << "Failed to start device";
-      return false;
+      OLA_WARN << "Failed to start device" << device->InterfaceSerialStr();
+      continue;
     }
-    m_plugin_adaptor->RegisterDevice(device);
     if (!device->openInterface(m_plugin_adaptor)) {
-      OLA_WARN << "Failed to open interface";
-      return false;
+      OLA_WARN << "Failed to open interface" << device->InterfaceSerialStr();
+      continue;
     }
-
-    if (device->getInputPort() != NULL)
-      m_input_ports.push_back(device->getInputPort());
+    m_devices.insert(device);
+    m_plugin_adaptor->RegisterDevice(device);
   }
 
   if (m_devices.empty())
     OLA_INFO << "found no connected interfaces";
   else
-    OLA_INFO << "found " << m_devices.size()
-             << " connected interfaces providing " << m_input_ports.size() << " inputs";
+    OLA_INFO << "found " << m_devices.size() << " connected interfaces";
 
   return true;
 }
@@ -230,16 +234,16 @@ bool EnlightenmentPlugin::SetupDevices() {
  * Close all fds
  */
 int EnlightenmentPlugin::CleanupDevices() {
-  m_input_ports.clear();
-
-  for (std::list<EnlightenmentDevice*>::iterator it = m_devices.begin(); it != m_devices.end(); ++it) {
+  std::set<EnlightenmentDevice*>::iterator it;
+  for (it = m_devices.begin();
+       it != m_devices.end();
+       ++it) {
     OLA_INFO << "closing device " << (*it)->DeviceId();
     m_plugin_adaptor->UnregisterDevice(*it);
     (*it)->Stop();
     delete (*it);
   }
   m_devices.clear();
-
 
   return 0;
 }

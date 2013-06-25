@@ -42,68 +42,64 @@ using ola::Device;
  */
 EnlightenmentDevice::EnlightenmentDevice(class EnlightenmentPlugin *owner,
                                          const string &name,
-                                         char* device_id,
-                                         int device_mode
+                                         const string &device_id,
+                                         DeviceMode device_mode
                                          )
   : Device(owner, name),
     m_input(NULL),
     m_output(NULL),
+    m_device_serial(device_id),
     m_device_mode(device_mode),
-    m_fd(0),
-    m_allow_multiport_patching(true) {
-  // this is the id the device is attached to
-  memcpy(m_device_serial, device_id, 16);
-  m_device_serial[16] = '\0';
-}
+    m_fd(ola::io::INVALID_DESCRIPTOR),
+    m_allow_multiport_patching(true) { }
 
 unsigned int EnlightenmentDevice::InterfaceVersion() {
-  return GetDeviceVersion(m_device_serial);
+    return GetDeviceVersion(InterfaceSerial());
 }
 
 bool EnlightenmentDevice::openInterface(class PluginAdaptor *plugin_adaptor) {
-  // create the ports (according to requested interface mode)
-  // 0: Do nothing - Standby
-  // 1: DMX In -> DMX Out
-  // 2: PC Out -> DMX Out
-  // 3: DMX In + PC Out -> DMX Out
-  // 4: DMX In -> PC In
-  // 5: DMX In -> DMX Out & DMX In -> PC In
-  // 6: PC Out -> DMX Out & DMX In -> PC In
-  // 7: DMX In + PC Out -> DMX Out & DMX In -> PC In
+  // create the input if required by device mode
   switch (m_device_mode) {
-    case 4:
-    case 5:
-    case 6:
-    case 7:
+    case DMXIN_TO_PCIN:
+    case DMXIN_TO_PCOUT_AND_DMXIN_TO_PCIN:
+    case PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN:
+    case DMXIN_PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN:
       m_input = new EnlightenmentInputPort(
                   this,
                   plugin_adaptor,
-                  0 /* TODO: Which id goes here? */);
+                  0);
       OLA_DEBUG << "created new input port";
       if (m_input == NULL)
         return false;
       this->AddPort(m_input);
       break;
+  default:
+      // no input needed
+      break;
   }
 
+  // create the output if required by device mode
   switch (m_device_mode) {
-    case 2:
-    case 3:
-    case 6:
-    case 7:
+    case PCOUT_TO_DMXOUT:
+    case DMXIN_PCIN_TO_DMXOUT:
+    case PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN:
+    case DMXIN_PCOUT_TO_DMXOUT_AND_DMXIN_TO_PCIN:
       m_output = new EnlightenmentOutputPort(
                   this,
-                  0 /* TODO: Which id goes here? */);
+                  0);
       OLA_DEBUG << "created new output port";
       if (m_output == NULL)
         return false;
       this->AddPort(m_output);
       break;
+  default:
+      // no output needed
+      break;
   }
 
   // open the interface
   int fd = OpenLink(
-              m_device_serial,
+              InterfaceSerial(),
               m_output ? m_output->getTDMXArray() : NULL,
               m_input ? m_input->getTDMXArray() : NULL);
   if (fd != 1) {
@@ -113,7 +109,7 @@ bool EnlightenmentDevice::openInterface(class PluginAdaptor *plugin_adaptor) {
     m_fd = fd;
   }
   // configure the mode
-  SetInterfaceMode(m_device_serial, m_device_mode);
+  SetInterfaceMode(InterfaceSerial(), m_device_mode);
 
   // mode 7 is the only mode, multport patching is not allowed
   if (m_device_mode == 7)
@@ -123,7 +119,12 @@ bool EnlightenmentDevice::openInterface(class PluginAdaptor *plugin_adaptor) {
 }
 
 EnlightenmentDevice::~EnlightenmentDevice() {
-  CloseLink(m_device_serial);
+    CloseLink(InterfaceSerial());
+}
+
+void EnlightenmentDevice::IncomingChanges() {
+    if (m_input)
+        m_input->UpdateData();
 }
 
 }  // namespace enlightenment
